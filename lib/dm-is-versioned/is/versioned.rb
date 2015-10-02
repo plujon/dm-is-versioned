@@ -47,6 +47,7 @@ module DataMapper
     module Versioned
       def is_versioned(options = {})
         @on = on = options[:on]
+        iff = options[:if]
 
         extend(Migration) if respond_to?(:auto_migrate!)
 
@@ -61,7 +62,9 @@ module DataMapper
 
         after :update do
           if clean? && pending_version_attributes.key?(on)
-            model::Version.create(attributes.merge(pending_version_attributes))
+            if iff.nil? || iff.call(self)
+              model::Version.create(attributes.merge(pending_version_attributes))
+            end
             pending_version_attributes.clear
           end
         end
